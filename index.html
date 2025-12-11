@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Stock Trading Position Size Calculator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg: #0f172a;        /* page background */
+      --card-bg: #0b1120;   /* card background */
+      --accent: #38bdf8;    /* main accent (cyan) */
+      --accent-soft: #1e293b;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --danger: #f97373;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      background: radial-gradient(circle at top, #1f2937 0, var(--bg) 45%, #020617 100%);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+    }
+
+    header {
+      width: 100%;
+      padding: 1.5rem 1rem;
+      background: linear-gradient(90deg, #0369a1, #0ea5e9);
+      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.8);
+    }
+
+    header h1 {
+      max-width: 960px;
+      margin: 0 auto;
+      font-size: clamp(1.5rem, 2.5vw, 2.1rem);
+      font-weight: 700;
+      color: #f9fafb;
+      text-align: center;
+      letter-spacing: 0.03em;
+    }
+
+    main {
+      flex: 1;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem 3rem;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 960px;
+      background: linear-gradient(135deg, var(--card-bg), #020617);
+      border-radius: 1rem;
+      box-shadow:
+        0 18px 45px rgba(0, 0, 0, 0.75),
+        0 0 0 1px rgba(148, 163, 184, 0.08);
+      padding: 2rem;
+      display: grid;
+      grid-template-columns: minmax(0, 3fr) minmax(0, 2.25fr);
+      gap: 2rem;
+    }
+
+    @media (max-width: 768px) {
+      .card {
+        grid-template-columns: minmax(0, 1fr);
+        padding: 1.5rem;
+      }
+    }
+
+    h2 {
+      font-size: 1.2rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .subtext {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 1.5rem;
+    }
+
+    .field {
+      margin-bottom: 1rem;
+    }
+
+    .field label {
+      display: block;
+      font-size: 0.9rem;
+      margin-bottom: 0.2rem;
+    }
+
+    .field small {
+      display: block;
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 0.2rem;
+    }
+
+    input[type="number"],
+    select {
+      width: 100%;
+      padding: 0.6rem 0.75rem;
+      border-radius: 0.5rem;
+      border: 1px solid #1f2937;
+      background: #020617;
+      color: var(--text);
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+      appearance: none;
+    }
+
+    input::placeholder {
+      color: #4b5563;
+    }
+
+    input:focus,
+    select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.7);
+      background: #020617;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .input-row span {
+      font-size: 0.9rem;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    button {
+      margin-top: 0.5rem;
+      padding: 0.75rem 1.4rem;
+      border-radius: 999px;
+      border: none;
+      font-size: 0.95rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      cursor: pointer;
+      background: linear-gradient(135deg, var(--accent), #0ea5e9);
+      color: #0b1120;
+      box-shadow: 0 14px 35px rgba(56, 189, 248, 0.45);
+      transition: transform 0.1s ease, box-shadow 0.1s ease, filter 0.15s ease;
+      width: 100%;
+    }
+
+    button:hover {
+      filter: brightness(1.05);
+      box-shadow: 0 18px 45px rgba(56, 189, 248, 0.55);
+      transform: translateY(-1px);
+    }
+
+    button:active {
+      transform: translateY(1px);
+      box-shadow: 0 8px 25px rgba(15, 23, 42, 0.9);
+    }
+
+    .results {
+      background: radial-gradient(circle at top left, rgba(56, 189, 248, 0.12), transparent 50%);
+      border-radius: 0.9rem;
+      padding: 1.25rem 1.1rem;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+    }
+
+    .results h2 {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.15rem 0.55rem;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      background: rgba(15, 23, 42, 0.85);
+      color: var(--muted);
+    }
+
+    .results-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.65rem 1rem;
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 480px) {
+      .results-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .results-label {
+      color: var(--muted);
+    }
+
+    .results-value {
+      font-weight: 600;
+      color: #e5e7eb;
+    }
+
+    .results-emphasis {
+      margin-top: 0.7rem;
+      padding-top: 0.7rem;
+      border-top: 1px dashed rgba(148, 163, 184, 0.4);
+      font-size: 0.9rem;
+    }
+
+    .results-emphasis span {
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    .error {
+      margin-top: 0.5rem;
+      font-size: 0.8rem;
+      color: var(--danger);
+    }
+
+    footer {
+      width: 100%;
+      padding: 0.75rem 1rem 1.25rem;
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Stock Trading Position Size Calculator</h1>
+  </header>
+
+  <main>
+    <section class="card">
+      <!-- INPUTS -->
+      <div>
+        <h2>Trade Inputs</h2>
+        <p class="subtext">
+          Enter your account size, select your risk per trade, and set your entry and stop prices.
+        </p>
+
+        <div class="field">
+          <label for="accountSize">Account size ($)</label>
+          <input type="number" id="accountSize" placeholder="e.g. 5000" min="0" step="0.01" />
+        </div>
+
+        <div class="field">
+          <label for="riskPercent">Risk per trade (% of account)</label>
+          <div class="input-row">
+            <select id="riskPercent">
+              <option value="0.5">0.5 %</option>
+              <option value="1" selected>1 %</option>
+              <option value="2">2 %</option>
+            </select>
+          </div>
+          <small>Predefined risk levels to keep you consistent.</small>
+        </div>
+
+        <div class="field">
+          <label for="entryPrice">Entry price ($)</label>
+          <input type="number" id="entryPrice" placeholder="e.g. 52.40" min="0" step="0.01" />
+        </div>
+
+        <div class="field">
+          <label for="stopPrice">Stop-loss price ($)</label>
+          <input type="number" id="stopPrice" placeholder="e.g. 50.90" min="0" step="0.01" />
+          <small>For long trades, this is below entry. For shorts, above entry.</small>
+        </div>
+
+        <div class="field">
+          <label for="targetPrice">Target price ($, optional)</label>
+          <input type="number" id="targetPrice" placeholder="e.g. 58.00" min="0" step="0.01" />
+          <small>Used to calculate risk-to-reward ratio if provided.</small>
+        </div>
+
+        <button id="calculateBtn">Calculate</button>
+        <div id="error" class="error"></div>
+      </div>
+
+      <!-- RESULTS -->
+      <div class="results">
+        <h2>
+          Position Details
+          <span class="pill">Results</span>
+        </h2>
+
+        <div class="results-grid">
+          <div>
+            <div class="results-label">Risk per share ($)</div>
+            <div id="riskPerShare" class="results-value">–</div>
+          </div>
+          <div>
+            <div class="results-label">Total risk ($)</div>
+            <div id="totalRisk" class="results-value">–</div>
+          </div>
+          <div>
+            <div class="results-label">Shares to trade</div>
+            <div id="shares" class="results-value">–</div>
+          </div>
+          <div>
+            <div class="results-label">Position size ($ at entry)</div>
+            <div id="positionSize" class="results-value">–</div>
+          </div>
+          <div>
+            <div class="results-label">Risk-to-reward (if target set)</div>
+            <div id="rr" class="results-value">–</div>
+          </div>
+        </div>
+
+        <div class="results-emphasis">
+          Position sizing is based on your selected risk of
+          <span id="riskSummary">–</span> of the account per trade.
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    For educational use only. Always manage risk according to your own trading plan.
+  </footer>
+
+  <script>
+    function formatCurrency(value) {
+      if (isNaN(value)) return "–";
+      return "$" + value.toFixed(2);
+    }
+
+    function formatNumber(value) {
+      if (isNaN(value)) return "–";
+      return value.toLocaleString(undefined, { maximumFractionDigits: 0 });
+    }
+
+    function formatRR(value) {
+      if (isNaN(value) || !isFinite(value)) return "–";
+      return value.toFixed(2) + " R";
+    }
+
+    document.getElementById("calculateBtn").addEventListener("click", function () {
+      const errorEl = document.getElementById("error");
+      errorEl.textContent = "";
+
+      const accountSize = parseFloat(document.getElementById("accountSize").value);
+      const riskPercent = parseFloat(document.getElementById("riskPercent").value);
+      const entryPrice = parseFloat(document.getElementById("entryPrice").value);
+      const stopPrice = parseFloat(document.getElementById("stopPrice").value);
+      const targetPrice = parseFloat(document.getElementById("targetPrice").value);
+
+      if (
+        isNaN(accountSize) ||
+        isNaN(riskPercent) ||
+        isNaN(entryPrice) ||
+        isNaN(stopPrice)
+      ) {
+        errorEl.textContent = "Please fill in account size, risk %, entry, and stop-loss.";
+        return;
+      }
+
+      if (accountSize <= 0) {
+        errorEl.textContent = "Account size must be greater than 0.";
+        return;
+      }
+
+      if (entryPrice === stopPrice) {
+        errorEl.textContent = "Entry price and stop-loss cannot be the same.";
+        return;
+      }
+
+      const riskAmount = accountSize * (riskPercent / 100);
+      const riskPerShare = Math.abs(entryPrice - stopPrice);
+
+      if (riskPerShare === 0) {
+        errorEl.textContent = "Risk per share cannot be zero.";
+        return;
+      }
+
+      const rawShares = riskAmount / riskPerShare;
+      const shares = Math.floor(rawShares);
+
+      if (shares <= 0) {
+        errorEl.textContent =
+          "Risk is too small or stop is too wide for at least 1 share. Adjust your inputs.";
+        return;
+      }
+
+      const positionSize = shares * entryPrice;
+
+      let rr = NaN;
+      if (!isNaN(targetPrice) && targetPrice > 0) {
+        const rewardPerShare = targetPrice - entryPrice;
+        if (rewardPerShare !== 0) {
+          rr = rewardPerShare / (entryPrice - stopPrice);
+          // Make RR positive and direction-agnostic
+          rr = Math.abs(rr);
+        }
+      }
+
+      // Update UI
+      document.getElementById("riskPerShare").textContent = formatCurrency(riskPerShare);
+      document.getElementById("totalRisk").textContent = formatCurrency(riskAmount);
+      document.getElementById("shares").textContent = formatNumber(shares);
+      document.getElementById("positionSize").textContent = formatCurrency(positionSize);
+      document.getElementById("rr").textContent = formatRR(rr);
+      document.getElementById("riskSummary").textContent = riskPercent + "%";
+    });
+  </script>
+</body>
+</html>
